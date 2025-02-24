@@ -1,0 +1,13 @@
+# Dockerfile
+FROM python:3.10-slim
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy main.py into the image
+COPY main.py .
+
+RUN apt-get update && apt-get install procps -y
+
+# Execute main.py at container startup
+CMD ["python", "main.py"]

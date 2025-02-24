@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dummy
+  labels:
+    app: guestbook
+    tier: dummy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: dummy
+  template:
+    metadata:
+      labels:
+        tier: dummy
+    spec:
+      containers:
+        - name: python-container
+          image: my-python-app:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          securityContext:
+            capabilities:
+              add:
+                - "SYS_PTRACE"
