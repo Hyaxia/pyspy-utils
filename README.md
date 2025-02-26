@@ -9,3 +9,4 @@ Currently we have two utils:
 - Combining Profiling Results
     - be able to take X number of results from the same process (important that the stack results are referncing to the same places)
     - combine them into a single result file that will allow you to view the results in an easy way
+    - example `cargo run -- combine-speedscope-files --all-profiles-file-path <path_to_file>`
