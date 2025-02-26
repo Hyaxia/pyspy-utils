@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 use colored::*;
 mod combine_speedscope;
 mod run_continuos_pyspy;
+mod speedscope_format;
 
 #[derive(Subcommand)]
 enum Commands {
@@ -53,19 +54,24 @@ fn main() {
             println!(
                 "{}",
                 format!(
-                    "Running continuos pyspy profiling on pod {} in namespace {} for {} seconds",
+                    "====> Running continuos pyspy profiling on pod {} in namespace {} for {} seconds",
                     pod_name, namespace, duration_seconds
                 )
                 .green()
             );
-            match run_continuos_pyspy::run_continuos_pyspy(pod_name, namespace, duration_seconds, num_of_samples) {
+            match run_continuos_pyspy::run_continuos_pyspy(
+                pod_name,
+                namespace,
+                duration_seconds,
+                num_of_samples,
+            ) {
                 Ok(_) => println!(
                     "{}",
-                    format!("Successfuly finished running pyspy profiling").green()
+                    format!("====> Successfuly finished running pyspy profiling").green()
                 ),
                 Err(e) => eprintln!(
                     "{}",
-                    format!("Error running continuos pyspy profiling: {}", e).red()
+                    format!("====> Error running continuos pyspy profiling: {}", e).red()
                 ),
             }
         }
@@ -74,11 +80,30 @@ fn main() {
         } => {
             println!(
                 "{}",
-                format!("Combining speedscope files from {}", all_profiles_file_path).green()
+                format!(
+                    "====> Combining speedscope files from {}",
+                    all_profiles_file_path
+                )
+                .green()
             );
-            match combine_speedscope::entry_point(&all_profiles_file_path, "./profiling_results") {
-                Ok(_) => println!("Successfully combined speedscope files"),
-                Err(e) => eprintln!("Error combining speedscope files: {}", e),
+            let combined_speedscope_file_path = "./profiling_results/combined_speedscope.json";
+            match combine_speedscope::entry_point(
+                &all_profiles_file_path,
+                &combined_speedscope_file_path,
+            ) {
+                Ok(_) => println!(
+                    "{}",
+                    format!(
+                        "====> Successfuly combined speedscope files to {}",
+                        combined_speedscope_file_path
+                    )
+                    .green()
+                ),
+
+                Err(e) => eprintln!(
+                    "{}",
+                    format!("====> Error combining speedscope files: {}", e).red()
+                ),
             }
         }
     }
