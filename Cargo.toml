@@ -9,4 +9,8 @@ serde = { version = "1.0.104", features = ["derive"] }
 serde_json = "1.0.48"
 clap = { version = "4", features = ["derive"] }
 colored = "2"
+tempfile = "3.10.0"
+
+[dev-dependencies]
+mockito = "1.2.0"
 

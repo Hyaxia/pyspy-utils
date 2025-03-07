@@ -211,3 +211,159 @@ pub fn entry_point(
     )?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use speedscope_format::{Frame, Profile, Shared, Speedscope};
+
+    #[test]
+    fn test_read_speedscope_files() {
+        // Create a temporary file with speedscope content
+        let temp_dir = tempfile::tempdir().unwrap();
+        let file_path = temp_dir.path().join("test.json");
+        let speedscope = Speedscope {
+            profiles: vec![Profile::default()],
+            shared: Shared {
+                frames: vec![Frame::default()],
+            },
+            schema: "test".to_string(),
+            exporter: "test".to_string(),
+            name: "test".to_string(),
+        };
+        std::fs::write(&file_path, serde_json::to_string(&speedscope).unwrap()).unwrap();
+
+        let files = vec![file_path.to_str().unwrap()];
+        let result = read_speedscope_files(files);
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].schema, "test");
+    }
+
+    #[test]
+    fn test_create_hash_to_new_index_and_frame() {
+        let frame1 = Frame {
+            name: "func1".to_string(),
+            file: "file1.py".to_string(),
+            line: 1,
+            col: None,
+        };
+        let frame2 = Frame {
+            name: "func2".to_string(),
+            file: "file2.py".to_string(),
+            line: 2,
+            col: None,
+        };
+
+        let speedscope = Speedscope {
+            profiles: vec![],
+            shared: Shared {
+                frames: vec![frame1.clone(), frame2.clone()],
+            },
+            schema: "".to_string(),
+            exporter: "".to_string(),
+            name: "".to_string(),
+        };
+
+        let result = create_hash_to_new_index_and_frame(&vec![speedscope]);
+
+        assert_eq!(result.len(), 2);
+        assert!(result.values().any(|(_, f)| f.name == "func1"));
+        assert!(result.values().any(|(_, f)| f.name == "func2"));
+    }
+
+    #[test]
+    fn test_adjust_speedscope_to_new_indexes_and_frames() {
+        let frame1 = Frame {
+            name: "func1".to_string(),
+            file: "file1.py".to_string(),
+            line: 1,
+            col: None,
+        };
+
+        let original_speedscope = Speedscope {
+            profiles: vec![Profile::default()],
+            shared: Shared {
+                frames: vec![frame1.clone()],
+            },
+            schema: "test".to_string(),
+            exporter: "test".to_string(),
+            name: "test".to_string(),
+        };
+
+        let mut hash_map = std::collections::HashMap::new();
+        hash_map.insert(frame1.hash(), (0, frame1.clone()));
+
+        let adjusted = adjust_speedscope_to_new_indexes_and_frames(&original_speedscope, &hash_map);
+
+        assert_eq!(adjusted.profiles.len(), 1);
+        assert_eq!(adjusted.schema, "test");
+        assert_eq!(adjusted.shared.frames.len(), 1); // Frames are preserved in the adjusted speedscope
+    }
+
+    #[test]
+    fn test_combine_profiles_weights() {
+        let profile1 = Profile {
+            name: "profile1".to_string(),
+            unit: "ms".to_string(),
+            start_value: 0.0,
+            end_value: 100.0,
+            samples: vec![vec![0, 1, 2]],
+            weights: vec![1.0, 2.0, 3.0],
+            r#type: "sampled".to_string(),
+        };
+        let profile2 = Profile {
+            name: "profile2".to_string(),
+            unit: "ms".to_string(),
+            start_value: 0.0,
+            end_value: 100.0,
+            samples: vec![vec![0, 1, 2]],
+            weights: vec![4.0, 5.0, 6.0],
+            r#type: "sampled".to_string(),
+        };
+
+        let combined_weights = combine_profiles_weights(&vec![&profile1, &profile2]);
+
+        assert_eq!(combined_weights.len(), 6);
+        assert_eq!(combined_weights, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+    }
+
+    #[test]
+    fn test_extract_same_profile_groups() {
+        let profile1 = Profile {
+            name: "profile1".to_string(),
+            unit: "ms".to_string(),
+            start_value: 0.0,
+            end_value: 100.0,
+            samples: vec![],
+            weights: vec![],
+            r#type: "sampled".to_string(),
+        };
+
+        let speedscope1 = Speedscope {
+            profiles: vec![profile1.clone()],
+            shared: Shared {
+                frames: vec![Frame::default()],
+            },
+            schema: "".to_string(),
+            exporter: "".to_string(),
+            name: "".to_string(),
+        };
+
+        let speedscope2 = Speedscope {
+            profiles: vec![profile1],
+            shared: Shared {
+                frames: vec![Frame::default()],
+            },
+            schema: "".to_string(),
+            exporter: "".to_string(),
+            name: "".to_string(),
+        };
+
+        let speedscopes = vec![speedscope1, speedscope2];
+        let result = extract_same_profile_groups(&speedscopes);
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result.keys().next().unwrap(), "profile1");
+    }
+}

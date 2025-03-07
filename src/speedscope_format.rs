@@ -16,6 +16,20 @@ pub struct Profile {
     pub r#type: String,
 }
 
+impl Default for Profile {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            unit: String::new(),
+            start_value: 0.0,
+            end_value: 0.0,
+            samples: Vec::new(),
+            weights: Vec::new(),
+            r#type: String::new(),
+        }
+    }
+}
+
 use serde::Deserialize;
 
 #[derive(serde::Serialize, Debug, Deserialize, Clone)]
@@ -35,6 +49,17 @@ pub struct Frame {
     pub file: String,
     pub line: u32,
     pub col: Option<u32>,
+}
+
+impl Default for Frame {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            file: String::new(),
+            line: 0,
+            col: None,
+        }
+    }
 }
 
 impl Frame {
